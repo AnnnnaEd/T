@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSP - Optimización de Ruta</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function agregarCiudad() {
+            const ciudad = document.getElementById("ciudad").value.trim();
+            const latitud = document.getElementById("latitud").value.trim();
+            const longitud = document.getElementById("longitud").value.trim();
+
+            if (ciudad && latitud && longitud) {
+                const lista = document.getElementById("listaCiudades");
+                lista.innerHTML += `<li class="list-group-item">${ciudad}: (${latitud}, ${longitud})</li>`;
+
+                document.getElementById("ciudad").value = "";
+                document.getElementById("latitud").value = "";
+                document.getElementById("longitud").value = "";
+            }
+        }
+
+        function calcularRuta() {
+            const ciudades = [];
+            document.querySelectorAll("#listaCiudades li").forEach(item => {
+                const texto = item.textContent.split(": ");
+                const nombre = texto[0];
+                const coords = texto[1].replace("(", "").replace(")", "").split(", ");
+                ciudades.push({ nombre: nombre, latitud: parseFloat(coords[0]), longitud: parseFloat(coords[1]) });
+            });
+
+            const temperatura = parseFloat(document.getElementById("temperatura").value);
+            const tasaEnfriamiento = parseFloat(document.getElementById("tasa_enfriamiento").value);
+
+            fetch('/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ciudades: ciudades, temperatura: temperatura, tasa_enfriamiento: tasaEnfriamiento })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("resultado").innerHTML = `
+                    <div class="alert alert-info">
+                        <h4>Ruta Óptima:</h4>
+                        <p>${data.ruta.join(" → ")}</p>
+                        <h4>Distancia Total:</h4>
+                        <p class="fw-bold">${data.distancia.toFixed(2)} unidades</p>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</head>
+<body class="bg-light">
+    <div class="container d-flex flex-column align-items-center justify-content-center vh-100">
+        <div class="text-center p-4 bg-white shadow rounded">
+            <h1 class="display-5 text-success">Optimización de Ruta TSP</h1>
+            <p class="lead text-secondary">Ingresa tus ciudades y parámetros para encontrar la mejor ruta.</p>
+
+            <div class="mb-3">
+                <input type="text" id="ciudad" class="form-control mb-2" placeholder="Nombre de la ciudad">
+                <input type="text" id="latitud" class="form-control mb-2" placeholder="Latitud">
+                <input type="text" id="longitud" class="form-control mb-2" placeholder="Longitud">
+                <button class="btn btn-success" onclick="agregarCiudad()">Agregar Ciudad</button>
+            </div>
+
+            <h4>Parámetros de Simulated Annealing</h4>
+            <input type="number" id="temperatura" class="form-control mb-2" placeholder="Temperatura inicial (Ej. 20)">
+            <input type="number" id="tasa_enfriamiento" class="form-control mb-2" placeholder="Tasa de enfriamiento (Ej. 0.005)">
+
+            <ul id="listaCiudades" class="list-group mb-3"></ul>
+            <button class="btn btn-primary btn-lg" onclick="calcularRuta()">Calcular Ruta Óptima</button>
+            <div id="resultado" class="mt-4"></div>
+        </div>
+    </div>
+</body>
+</html>
+
+
